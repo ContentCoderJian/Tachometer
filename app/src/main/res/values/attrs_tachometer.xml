@@ -4,5 +4,19 @@
         <attr name="exampleDimension" format="dimension" />
         <attr name="exampleColor" format="color" />
         <attr name="exampleDrawable" format="color|reference" />
+
+
+
+        <attr name="start" format="integer"/>
+        <attr name="redZone" format="integer"/>
+        <attr name="end" format="integer"/>
+
+        <attr name="sticker" format="color|reference"/>
+
+        <attr name="backgroundColor" format="color"/>
+        <attr name="numColor" format="color"/>
+        <attr name="arrowColor" format="color"/>
+        <attr name="divisionColor" format="color"/>
+        
     </declare-styleable>
 </resources>
