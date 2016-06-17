@@ -5,8 +5,9 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.os.Parcelable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
@@ -20,7 +21,13 @@ public class Tachometer extends View {
     private float mExampleDimension = 0; // TODO: use a default from R.dimen...
     private Drawable mExampleDrawable;
 
+    private Drawable sticker;
+    private int currentSize = 0;
+
     private TextPaint mTextPaint;
+    private Paint circlePaint;
+    private Paint circlePaint2;
+
     private float mTextWidth;
     private float mTextHeight;
 
@@ -61,49 +68,29 @@ public class Tachometer extends View {
             mExampleDrawable.setCallback(this);
         }
 
+        if (a.hasValue(R.styleable.Tachometer_sticker)) {
+            sticker = a.getDrawable(
+                    R.styleable.Tachometer_sticker);
+            sticker.setCallback(this);
+        }
+
         a.recycle();
 
         // Set up a default TextPaint object
         mTextPaint = new TextPaint();
         mTextPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.setTextAlign(Paint.Align.LEFT);
-        Typeface tf = Typeface.create("sans-serif-light", Typeface.NORMAL);
-        mTextPaint.setTypeface(tf);
+
+        circlePaint = new Paint();
+        circlePaint.setColor(Color.BLACK);
+
+        circlePaint2 = new Paint();
+        circlePaint2.setColor(Color.RED);
+        circlePaint2.setStyle(Paint.Style.STROKE);
+        circlePaint2.setStrokeWidth(10);
 
         // Update TextPaint and text measurements from attributes
         invalidateTextPaintAndMeasurements();
-    }
-
-    private void invalidateTextPaintAndMeasurements() {
-        mTextPaint.setTextSize(mExampleDimension);
-        mTextPaint.setColor(mExampleColor);
-        mTextWidth = mTextPaint.measureText(mExampleString);
-
-        Paint.FontMetrics fontMetrics = mTextPaint.getFontMetrics();
-        mTextHeight = fontMetrics.bottom;
-
-        invalidate();
-        requestLayout();
-    }
-
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // Try for a width based on our minimum
-        int t = getSuggestedMinimumHeight();
-        int tt = getSuggestedMinimumWidth();
-
-        int minw = getPaddingLeft() + getPaddingRight() + getSuggestedMinimumWidth();
-        int w = resolveSizeAndState(minw, widthMeasureSpec, 1);
-
-        // Whatever the width ends up being, ask for a height that would let the pie
-        // get as big as it can
-        int minh = MeasureSpec.getSize(w) - (int)mTextWidth + getPaddingBottom() + getPaddingTop();
-        int h = resolveSizeAndState(MeasureSpec.getSize(w) - (int)mTextWidth, heightMeasureSpec, 0);
-
-        int size = Math.min(w, h);
-
-        setMeasuredDimension(size, size);
     }
 
     @Override
@@ -117,22 +104,98 @@ public class Tachometer extends View {
         int paddingRight = getPaddingRight();
         int paddingBottom = getPaddingBottom();
 
-        int contentWidth = getWidth() - paddingLeft - paddingRight;
-        int contentHeight = getHeight() - paddingTop - paddingBottom;
+//        int contentWidth = getWidth() - paddingLeft - paddingRight;
+//        int contentHeight = getHeight() - paddingTop - paddingBottom;
+
+        currentSize = getWidth();
+
+        int contentWidth = currentSize - paddingLeft - paddingRight;
+        int contentHeight = currentSize - paddingTop - paddingBottom;
+        int quarter = contentWidth / 5;
+
+        int centerX = paddingLeft + currentSize / 2;
+        int centerY = paddingTop + currentSize / 2;
+
+        canvas.drawCircle(centerX, centerY, contentWidth / 2, circlePaint);
+        canvas.drawCircle(centerX, centerY, 10, mTextPaint);
+        canvas.drawLine(centerX, centerY, centerX + contentWidth / 2, centerY, mTextPaint);
+
+        canvas.drawCircle(centerX, centerY, contentWidth / 2, circlePaint2);
 
         // Draw the text.
-        canvas.drawText(mExampleString,
-                paddingLeft + (contentWidth - mTextWidth) / 2,
-                paddingTop + (contentHeight + mTextHeight) / 2,
-                mTextPaint);
+//        canvas.drawText(mExampleString,
+//                paddingLeft + (contentWidth - mTextWidth) / 2,
+//                paddingTop + (contentHeight + mTextHeight) / 2,
+//                mTextPaint);
 
         // Draw the example drawable on top of the text.
-        if (mExampleDrawable != null) {
-            mExampleDrawable.setBounds(paddingLeft, paddingTop,
-                    paddingLeft + contentWidth, paddingTop + contentHeight);
-            mExampleDrawable.draw(canvas);
+//        if (mExampleDrawable != null) {
+//            mExampleDrawable.setBounds(paddingLeft, paddingTop,
+//                    paddingLeft + contentWidth, paddingTop + contentHeight);
+//            mExampleDrawable.draw(canvas);
+//        }
+
+        if (sticker != null) {
+            //left top right bottom
+            int width = quarter; //sticker.getIntrinsicWidth();
+            int height = quarter; //sticker.getIntrinsicHeight();
+
+
+
+            int left = centerX - width / 2;
+            int top = centerY - height / 2 - quarter;
+            sticker.setAlpha(200);
+            sticker.setBounds(
+                    left,
+                    top,
+                    left + width,
+                    top + height);
+            sticker.draw(canvas);
         }
     }
+
+    private void invalidateTextPaintAndMeasurements() {
+        mTextPaint.setTextSize(mExampleDimension);
+        mTextPaint.setColor(mExampleColor);
+        mTextWidth = mTextPaint.measureText(mExampleString);
+
+        Paint.FontMetrics fontMetrics = mTextPaint.getFontMetrics();
+        mTextHeight = fontMetrics.bottom;
+
+//        invalidate();
+//        requestLayout();
+    }
+
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        int specWidth = MeasureSpec.getSize(widthMeasureSpec);
+        int specHeight = MeasureSpec.getSize(heightMeasureSpec);
+        int lesserDimension = (specWidth > specHeight) ? specHeight : specWidth;
+        currentSize = lesserDimension;
+        setMeasuredDimension(lesserDimension, lesserDimension);
+    }
+
+//    @Override
+//    protected Parcelable onSaveInstanceState() {
+//        Bundle bundle = new Bundle();
+//        bundle.putParcelable("instanceState", super.onSaveInstanceState());
+////        bundle.putString("myString", myEditText.getText().toString());
+//        return bundle;
+//    }
+
+//    @Override
+//    protected void onRestoreInstanceState(Parcelable state) {
+//        if (state instanceof Bundle) {
+//            Bundle bundle = (Bundle) state;
+////            myEditText.setText(bundle.getString("myString"));
+//            state = bundle.getParcelable("instanceState");
+//        }
+//        super.onRestoreInstanceState(state);
+//    }
+
 
     /**
      * Gets the example string attribute value.
