@@ -10,6 +10,7 @@
         <attr name="start" format="integer"/>
         <attr name="redZone" format="integer"/>
         <attr name="end" format="integer"/>
+        <attr name="availableAngle" format="integer"/>
 
         <attr name="sticker" format="color|reference"/>
 

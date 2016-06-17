@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Tachometer</string>
+    <string name="rpm">RPM</string>
 </resources>

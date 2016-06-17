@@ -21,9 +21,9 @@ public class MainActivity extends Activity {
     }
 
     public void fun(View v) {
-        tachometer.setExampleString("qqqqqqqqqqqqqqqqqq");
+        //tachometer.setExampleString("qqqqqqqqqqqqqqqqqq");
         Random rnd = new Random();
         int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
-        tachometer.setExampleColor(color);
+        //tachometer.setExampleColor(color);
     }
 }

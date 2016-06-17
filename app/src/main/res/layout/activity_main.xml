@@ -4,38 +4,26 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/black"
     tools:context="com.owl.tachometer.MainActivity">
 
 
     <com.owl.tachometer.Tachometer
         android:id="@+id/tachometer"
-        android:layout_centerInParent="true"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#ccc"
-        android:paddingLeft="10dp"
-        android:paddingRight="40dp"
-        android:layout_margin="20dp"
+        android:layout_centerInParent="true"
+        android:keepScreenOn="true"
 
-        app:start="0"
-        app:end="8"
-        app:redZone="7"
-        app:backgroundColor="@android:color/black"
-        app:sticker="@drawable/bmw_sticker"
-        app:numColor="#848685"
         app:arrowColor="#DA1B27"
+        app:backgroundColor="@android:color/black"
         app:divisionColor="#996F2E"
+        app:end="8"
+        app:numColor="#848685"
+        app:redZone="6"
+        app:start="0"
+        app:availableAngle="300"
+        app:sticker="@drawable/bmw_sticker" />
 
-
-        app:exampleColor="#33b5e5"
-        app:exampleDimension="27sp"
-        app:exampleDrawable="@android:drawable/ic_menu_add"
-        app:exampleString="Hello, Tachometer" />
-
-    <Button
-        android:layout_centerHorizontal="true"
-        android:layout_width="100dp"
-        android:layout_height="50dp"
-        android:onClick="fun"/>
 
 </RelativeLayout>
