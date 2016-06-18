@@ -3,6 +3,7 @@ package com.owl.tachometer;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
 
 public class TachometerService extends Service {
     final static String TACHOMETER_TICK_ACTION = "com.owl.tachometer.TACHOMETER_TICK_ACTION";
@@ -54,9 +55,10 @@ public class TachometerService extends Service {
                     release();
                     push();
                     push();
-                    release();
 
                     leave();
+                    delay();
+                    delay();
                 }
 
             } catch(Exception e) {
@@ -64,35 +66,41 @@ public class TachometerService extends Service {
             }
         }
 
+        private float calculateMomentum() {
+
+            return (float) (1 + 2 * Math.exp(- rps / 1000));
+        }
+
         private void push() throws InterruptedException {
-            float acceleration = 1f;
+            Log.d("Service", "push");
             for (int i = 0; i < 4 && running; ++i) {
-                rps += 500 * acceleration;
+                rps += 500 * calculateMomentum();
                 sendValue(rps);
                 delay();
-                acceleration += 0.3;
             }
         }
 
         private void release() throws InterruptedException {
-            float acceleration = 2f;
+            Log.d("Service", "release");
             for (int i = 0; i < 3 && running; ++i) {
-                rps -= 300 * acceleration;
+                rps -= 500 * calculateMomentum();
                 sendValue(rps);
                 delay();
-                acceleration += 0.3;
             }
         }
 
         private void leave() throws InterruptedException {
-            float acceleration = 1f;
+            Log.d("Service", "leave");
             while (rps > 1000 && running) {
-                rps -= 200 * acceleration;
+                rps -= 600 * calculateMomentum();
                 sendValue(rps);
                 delay();
-                acceleration += 0.3;
             }
-            rps = 1000;
+            rps = 1100;
+            sendValue(rps);
+            delay();
+            sendValue(1000);
+            delay();
         }
 
         private void turnOnTheEngine() throws InterruptedException {
