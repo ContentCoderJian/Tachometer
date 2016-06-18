@@ -10,6 +10,8 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.os.Parcelable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
@@ -18,6 +20,9 @@ import android.view.View;
  * TODO: document your custom view class.
  */
 public class Tachometer extends View {
+
+    final static String TACHOMETER_VIEW_STATE = "com.owl.tachometer.TACHOMETER_VIEW_STATE";
+    final static String TACHOMETER_VIEW_ROTATION = "com.owl.tachometer.TACHOMETER_VIEW_ROTATION";
 
     private int start = 0;
     private int end = 8;
@@ -319,23 +324,23 @@ public class Tachometer extends View {
         piece = contentWidth / 5;
     }
 
-//    @Override
-//    protected Parcelable onSaveInstanceState() {
-//        Bundle bundle = new Bundle();
-//        bundle.putParcelable("instanceState", super.onSaveInstanceState());
-////        bundle.putString("myString", myEditText.getText().toString());
-//        return bundle;
-//    }
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(TACHOMETER_VIEW_STATE, super.onSaveInstanceState());
+        bundle.putInt(TACHOMETER_VIEW_ROTATION, rotationSpeed);
+        return bundle;
+    }
 
-//    @Override
-//    protected void onRestoreInstanceState(Parcelable state) {
-//        if (state instanceof Bundle) {
-//            Bundle bundle = (Bundle) state;
-////            myEditText.setText(bundle.getString("myString"));
-//            state = bundle.getParcelable("instanceState");
-//        }
-//        super.onRestoreInstanceState(state);
-//    }
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        if (state instanceof Bundle) {
+            Bundle bundle = (Bundle) state;
+            state = bundle.getParcelable(TACHOMETER_VIEW_STATE);
+            rotationSpeed = bundle.getInt(TACHOMETER_VIEW_ROTATION);
+        }
+        super.onRestoreInstanceState(state);
+    }
 
 
     /**
