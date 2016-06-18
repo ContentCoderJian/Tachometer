@@ -36,6 +36,7 @@ public class Tachometer extends View {
     private TextPaint rpmPaint; // paint for rpm text
     private Paint bigDivisionPaint;
     private Paint smallDivisionPaint;
+    private Paint mediumDivisionPaint;
     private Paint smallDivisionRedPaint;
     private Paint ArrowPaint;
     private Paint backgroundPaint;
@@ -43,7 +44,11 @@ public class Tachometer extends View {
 
     private String rpmText;
     private int frameWidth;
+    private int offsetFrame; // offset from frame to ticks
+    private int offsetDigit; // offset from ticks to digits
+    private int smallTickSize, mediumTickSize, bigTickSize;
     private int divisionWidth;
+
     Rect r = new Rect(); // template rect (outside function to reduce allocations per draw)
 
     private int currentSize;
@@ -92,6 +97,11 @@ public class Tachometer extends View {
         rpmText = getResources().getString(R.string.rpm);
         frameWidth = getResources().getDimensionPixelSize(R.dimen.frame_width);
         divisionWidth = getResources().getDimensionPixelSize(R.dimen.divisionWidth);
+        offsetFrame = getResources().getDimensionPixelSize(R.dimen.offset_from_frame);
+        offsetDigit = getResources().getDimensionPixelOffset(R.dimen.digit_offset);
+        smallTickSize = getResources().getDimensionPixelSize(R.dimen.small_tick_size);
+        mediumTickSize = getResources().getDimensionPixelSize(R.dimen.medium_tick_size);
+        bigTickSize = getResources().getDimensionPixelSize(R.dimen.big_tick_size);
 
         initPaints();
 
@@ -107,8 +117,6 @@ public class Tachometer extends View {
         drawFrame(canvas);
         drawClock(canvas);
 
-        drawText(canvas, numPaint, "o", centerX, centerY);
-
 
     }
 
@@ -118,7 +126,7 @@ public class Tachometer extends View {
         numPaint.setTextAlign(Paint.Align.LEFT);
         numPaint.setTextSize(getResources().getDimensionPixelSize(R.dimen.num_size));
         numPaint.setColor(numColor);
-        numPaint.setTypeface(Typeface.create("Arial", Typeface.BOLD));
+        numPaint.setTypeface(Typeface.create("mono", Typeface.BOLD));
 
         rpmPaint = new TextPaint();
         rpmPaint.setTextAlign(Paint.Align.LEFT);
@@ -133,9 +141,13 @@ public class Tachometer extends View {
         bigDivisionPaint.setColor(divisionColor);
         bigDivisionPaint.setStrokeWidth(divisionWidth);
 
+        mediumDivisionPaint = new Paint();
+        mediumDivisionPaint.setColor(divisionColor);
+        mediumDivisionPaint.setStrokeWidth(divisionWidth / 2);
+
         smallDivisionPaint = new Paint();
         smallDivisionPaint.setColor(divisionColor);
-        smallDivisionPaint.setStrokeWidth(divisionWidth / 2);
+        smallDivisionPaint.setStrokeWidth(divisionWidth / 3);
 
         smallDivisionRedPaint = new Paint();
         smallDivisionRedPaint.setColor(Color.RED);
@@ -167,12 +179,12 @@ public class Tachometer extends View {
         canvas.drawCircle(centerX, centerY,
                 contentWidth / 2 - round1.getStrokeWidth() - round2.getStrokeWidth() - round3.getStrokeWidth() / 2, round3);
         // draw rpm text
-        drawText(canvas, rpmPaint, rpmText, centerX, centerY + 1.5f * piece);
+        drawText(canvas, rpmPaint, rpmText, centerX, centerY + 1.7f * piece);
         // draw sticker
         if (sticker != null) {
             int left = centerX - piece / 2;
-            int top = (int) (centerY - piece * 1.4);
-            sticker.setAlpha(150);
+            int top = (int) (centerY - piece * 1.2);
+            sticker.setAlpha(110);
             sticker.setBounds(left, top, left + piece, top + piece);
             sticker.draw(canvas);
         }
@@ -182,41 +194,46 @@ public class Tachometer extends View {
         float startAngle = (360 - availableAngle) / 2;
         float bigStep = availableAngle / end;
         float smallStep = bigStep / 10f;
-        float bigRadius = contentWidth * 0.90f / 2f;
-        float mediumRadius = contentWidth * 0.80f / 2f;
-        float smallRadius = contentWidth * 0.70f / 2f;
+
+        float radius = contentWidth / 2f - offsetFrame;
 
         float currentAngle = startAngle;
         float redAngle = redZone * bigStep + startAngle;
 
-        while (currentAngle < startAngle + availableAngle) {
-        //for (int i = 0; i <= end; ++i) {
+        int counter = start;
+        PointF a, a2, b, b2;
 
-            PointF a = calculateCirclePoint(currentAngle, bigRadius);
-            PointF b = calculateCirclePoint(currentAngle, smallRadius);
+        while (currentAngle < startAngle + availableAngle) {
+
+            a = calculateCirclePoint(currentAngle, radius);
+            b = calculateCirclePoint(currentAngle, radius - bigTickSize);
             canvas.drawLine(a.x, a.y, b.x, b.y, bigDivisionPaint);
+
+            a = calculateCirclePoint(currentAngle, radius - bigTickSize - offsetDigit);
+            drawText(canvas, numPaint, String.valueOf(counter++), a.x, a.y);
 
             for (int j = 0; j < 10; ++j) {
                 currentAngle += smallStep;
 
-                PointF a2 = calculateCirclePoint(currentAngle, bigRadius);
-                PointF b2 = calculateCirclePoint(currentAngle, mediumRadius);
-                if (currentAngle < redAngle) {
+                a2 = calculateCirclePoint(currentAngle, radius);
+                b2 = calculateCirclePoint(currentAngle, radius - smallTickSize);
+                if (j == 4) {
+                    b2 = calculateCirclePoint(currentAngle, radius - mediumTickSize);
+                    canvas.drawLine(a2.x, a2.y, b2.x, b2.y, mediumDivisionPaint);
+                } else if (currentAngle < redAngle) {
                     canvas.drawLine(a2.x, a2.y, b2.x, b2.y, smallDivisionPaint);
                 } else {
                     canvas.drawLine(a2.x, a2.y, b2.x, b2.y, smallDivisionRedPaint);
                 }
-
-
             }
-
-            a = calculateCirclePoint(currentAngle, bigRadius);
-            b = calculateCirclePoint(currentAngle, smallRadius);
-            canvas.drawLine(a.x, a.y, b.x, b.y, bigDivisionPaint);
-
         }
 
+        a = calculateCirclePoint(currentAngle, radius);
+        b = calculateCirclePoint(currentAngle, radius - bigTickSize);
+        canvas.drawLine(a.x, a.y, b.x, b.y, bigDivisionPaint);
 
+        a = calculateCirclePoint(currentAngle, radius - bigTickSize - offsetDigit);
+        drawText(canvas, numPaint, String.valueOf(counter++), a.x, a.y);
 
     }
 

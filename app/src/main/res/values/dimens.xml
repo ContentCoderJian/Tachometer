@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="num_size">45sp</dimen>
+    <dimen name="num_size">40sp</dimen>
     <dimen name="rpm_size">30sp</dimen>
-
     <dimen name="frame_width">10dp</dimen>
 
-    <dimen name="divisionWidth">5dp</dimen>
+    <dimen name="divisionWidth">6dp</dimen>
+
+    <dimen name="offset_from_frame">16dp</dimen>
+    <dimen name="digit_offset">23dp</dimen>
+
+    <dimen name="small_tick_size">10dp</dimen>
+    <dimen name="medium_tick_size">20dp</dimen>
+    <dimen name="big_tick_size">30dp</dimen>
+
 
 </resources>
