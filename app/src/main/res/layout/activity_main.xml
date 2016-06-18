@@ -16,7 +16,7 @@
         android:keepScreenOn="true"
 
         app:arrowColor="#DA1B27"
-        app:backgroundColor="@android:color/black"
+        app:backgroundColor="@android:color/background_light"
         app:divisionColor="#996F2E"
         app:end="8"
         app:numColor="#848685"
@@ -25,5 +25,10 @@
         app:availableAngle="270"
         app:sticker="@drawable/bmw_sticker" />
 
+    <Button
+        android:layout_centerHorizontal="true"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:onClick="fun"/>
 
 </RelativeLayout>

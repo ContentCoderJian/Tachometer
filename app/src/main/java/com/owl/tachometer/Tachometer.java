@@ -5,14 +5,11 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Point;
+import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.Rect;
-import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.os.Bundle;
-import android.os.Parcelable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
@@ -31,6 +28,7 @@ public class Tachometer extends View {
     private int arrowColor = Color.RED;
     private int divisionColor = Color.WHITE;
     private float availableAngle = 270f;
+    float startAngle;
 
     private TextPaint numPaint; // paint for digit letters
     private TextPaint rpmPaint; // paint for rpm text
@@ -38,7 +36,7 @@ public class Tachometer extends View {
     private Paint smallDivisionPaint;
     private Paint mediumDivisionPaint;
     private Paint smallDivisionRedPaint;
-    private Paint ArrowPaint;
+    private Paint arrowPaint;
     private Paint backgroundPaint;
     private Paint round1, round2, round3; // paints for frame
 
@@ -51,12 +49,14 @@ public class Tachometer extends View {
 
     Rect r = new Rect(); // template rect (outside function to reduce allocations per draw)
 
+    // config after onMeasure
     private int currentSize;
     private int centerX, centerY;
     private int contentWidth, contentHeight;
     private int paddingLeft, paddingRight, paddingTop, paddingBottom;
     private int piece; // 1/5 from content size
 
+    private int rotationSpeed = 0;
 
     public Tachometer(Context context) {
         super(context);
@@ -85,6 +85,7 @@ public class Tachometer extends View {
         arrowColor = a.getColor(R.styleable.Tachometer_arrowColor, arrowColor);
         divisionColor = a.getColor(R.styleable.Tachometer_divisionColor, divisionColor);
         availableAngle = (float) (a.getInteger(R.styleable.Tachometer_availableAngle, (int)availableAngle));
+        startAngle = (360 - availableAngle) / 2;
 
         if (a.hasValue(R.styleable.Tachometer_sticker)) {
             sticker = a.getDrawable(
@@ -106,8 +107,12 @@ public class Tachometer extends View {
         initPaints();
 
 
-        // Update TextPaint and text measurements from attributes
-        invalidateTextPaintAndMeasurements();
+        invalidateState();
+    }
+
+    public void setRotationSpeed(int r) {
+        rotationSpeed = r;
+        invalidateState();
     }
 
     @Override
@@ -116,7 +121,7 @@ public class Tachometer extends View {
 
         drawFrame(canvas);
         drawClock(canvas);
-
+        drawArrow(canvas);
 
     }
 
@@ -152,6 +157,11 @@ public class Tachometer extends View {
         smallDivisionRedPaint = new Paint();
         smallDivisionRedPaint.setColor(Color.RED);
         smallDivisionRedPaint.setStrokeWidth(divisionWidth / 2);
+
+        arrowPaint = new Paint();
+        arrowPaint.setColor(arrowColor);
+        arrowPaint.setStrokeWidth(divisionWidth);
+        arrowPaint.setStyle(Paint.Style.FILL);
 
         round1 = new Paint();
         round1.setColor(Color.parseColor("#9EA09F"));
@@ -191,7 +201,6 @@ public class Tachometer extends View {
     }
 
     private void drawClock(Canvas canvas) {
-        float startAngle = (360 - availableAngle) / 2;
         float bigStep = availableAngle / end;
         float smallStep = bigStep / 10f;
 
@@ -237,6 +246,31 @@ public class Tachometer extends View {
 
     }
 
+    private void drawArrow(Canvas canvas) {
+        float angle = (startAngle + rotationSpeed * availableAngle / (end * 1000) );
+        PointF a = calculateCirclePoint(angle, contentWidth / 2f - offsetFrame - smallTickSize);
+        PointF b = calculateCirclePoint(angle + 2, contentWidth / 2f - offsetFrame - mediumTickSize);
+        PointF e = calculateCirclePoint(angle - 2, contentWidth / 2f - offsetFrame - mediumTickSize);
+        PointF c = calculateCirclePoint(angle + 90, 12);
+        PointF d = calculateCirclePoint(angle - 90, 12);
+
+        Path p = new Path();
+        p.reset();
+        p.moveTo(a.x, a.y);
+        p.lineTo(b.x, b.y);
+        p.lineTo(c.x, c.y);
+        p.lineTo(d.x, d.y);
+        p.lineTo(e.x, e.y);
+        p.lineTo(a.x, a.y);
+
+        canvas.drawPath(p, arrowPaint);
+
+        PointF g = calculateCirclePoint(angle + 180, (contentWidth / 2f - offsetFrame) * 0.2f);
+        canvas.drawLine(g.x, g.y, centerX, centerY, arrowPaint);
+
+        canvas.drawCircle(centerX, centerY, piece / 10, arrowPaint);
+    }
+
     private PointF calculateCirclePoint(float angle, float R) {
         return new PointF(
                 (float) (centerX - R * Math.sin(angle / 180 * Math.PI)),
@@ -249,7 +283,7 @@ public class Tachometer extends View {
         c.drawText(text, x - r.width() / 2f, y + r.height() / 2f, p);
     }
 
-    private void invalidateTextPaintAndMeasurements() {
+    private void invalidateState() {
         //mTextPaint.setTextSize(mExampleDimension);
 //        mTextPaint.setColor(mExampleColor);
         //mTextWidth = mTextPaint.measureText(mExampleString);
@@ -321,7 +355,7 @@ public class Tachometer extends View {
      */
 //    public void setExampleColor(int exampleColor) {
 //        mExampleColor = exampleColor;
-//        invalidateTextPaintAndMeasurements();
+//        invalidateState();
 //    }
 
 
