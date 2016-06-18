@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="num_size">40sp</dimen>
-    <dimen name="rpm_size">30sp</dimen>
+    <dimen name="rpm_size">20sp</dimen>
     <dimen name="frame_width">10dp</dimen>
 
     <dimen name="divisionWidth">6dp</dimen>

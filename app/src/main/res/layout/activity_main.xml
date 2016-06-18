@@ -16,14 +16,14 @@
         android:keepScreenOn="true"
 
         app:arrowColor="#DA1B27"
-        app:backgroundColor="@android:color/background_light"
+        app:backgroundColor="@android:color/black"
         app:divisionColor="#996F2E"
         app:end="8"
         app:numColor="#848685"
         app:redZone="6"
         app:start="0"
         app:availableAngle="270"
-        app:sticker="@drawable/bmw_sticker" />
+        app:sticker="@drawable/honda_sticker" />
 
     <Button
         android:layout_centerHorizontal="true"

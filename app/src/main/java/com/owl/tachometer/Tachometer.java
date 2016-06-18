@@ -189,11 +189,11 @@ public class Tachometer extends View {
         canvas.drawCircle(centerX, centerY,
                 contentWidth / 2 - round1.getStrokeWidth() - round2.getStrokeWidth() - round3.getStrokeWidth() / 2, round3);
         // draw rpm text
-        drawText(canvas, rpmPaint, rpmText, centerX, centerY + 1.7f * piece);
+        drawText(canvas, rpmPaint, rpmText, centerX, centerY - 0.7f * piece);
         // draw sticker
         if (sticker != null) {
             int left = centerX - piece / 2;
-            int top = (int) (centerY - piece * 1.2);
+            int top = (int) (centerY + piece * 0.5f);
             sticker.setAlpha(110);
             sticker.setBounds(left, top, left + piece, top + piece);
             sticker.draw(canvas);
