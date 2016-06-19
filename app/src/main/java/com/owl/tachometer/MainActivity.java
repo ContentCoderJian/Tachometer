@@ -65,7 +65,7 @@ public class MainActivity extends Activity {
     private void receivedBroadcast(Intent i) {
         int value = i.getIntExtra(TachometerService.TACHOMETER_TICK_VALUE, 0);
 
-        Log.d("MainActivity", String.valueOf(value));
+//        Log.d("MainActivity", String.valueOf(value));
 
         tachometer.setRotationSpeed(value);
     }

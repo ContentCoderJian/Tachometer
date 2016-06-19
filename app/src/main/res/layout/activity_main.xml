@@ -22,7 +22,7 @@
         app:numColor="#848685"
         app:redZone="7"
         app:start="0"
-        app:availableAngle="270"
+        app:availableAngle="300"
         app:sticker="@drawable/honda_sticker" />
 
     <LinearLayout

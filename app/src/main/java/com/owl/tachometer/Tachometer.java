@@ -1,5 +1,12 @@
 package com.owl.tachometer;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.TimeInterpolator;
+import android.animation.TypeEvaluator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -14,7 +21,13 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.Interpolator;
+
+import java.util.ArrayList;
+
 
 /**
  * TODO: document your custom view class.
@@ -89,7 +102,7 @@ public class Tachometer extends View {
         numColor = a.getColor(R.styleable.Tachometer_numColor, numColor);
         arrowColor = a.getColor(R.styleable.Tachometer_arrowColor, arrowColor);
         divisionColor = a.getColor(R.styleable.Tachometer_divisionColor, divisionColor);
-        availableAngle = (float) (a.getInteger(R.styleable.Tachometer_availableAngle, (int)availableAngle));
+        availableAngle = (float) (a.getInteger(R.styleable.Tachometer_availableAngle, (int) availableAngle));
         startAngle = (360 - availableAngle) / 2;
 
         if (a.hasValue(R.styleable.Tachometer_sticker)) {
@@ -115,7 +128,70 @@ public class Tachometer extends View {
         invalidateState();
     }
 
-    public void setRotationSpeed(int r) {
+    public void setRotationSpeed(final int r) {
+
+
+        ObjectAnimator anim = ObjectAnimator.ofInt(this, "RS", rotationSpeed, r);
+        anim.setDuration(500);
+        final MyInterpolator interpol = new MyInterpolator();
+        interpol.A = rotationSpeed;
+        interpol.B = r;
+        anim.setInterpolator(interpol);
+
+        anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                int animProgress = (Integer) animation.getAnimatedValue();
+                //seekBar.setProgress(animProgress);
+            }
+        });
+        anim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                // done. setup residual animation
+                int sign = (r > rotationSpeed) ? 1 : -1;
+                int length = Math.abs(r - rotationSpeed);
+                ObjectAnimator animR = ObjectAnimator.ofInt(this, "RS", r, r + sign * length / 5);
+                animR.setDuration(500);
+                animR.setInterpolator(interpol);
+//                animR.start();
+            }
+        });
+
+
+//        anim.setInterpolator(new AccelerateInterpolator(1.8f - half / 8000f));
+
+        anim.start();
+
+    }
+
+    private class MyInterpolator implements Interpolator {
+
+        public int A, B;
+
+        @Override
+        public float getInterpolation(float t) {
+            boolean up = (B > A) ? true : false;
+            float half = Math.abs(A - B) / 2f;
+//            float k = 0.8f + Math.abs(A - B) / 4000f;
+            float k = 0.8f;
+            if (Math.abs(A - B) > 4000) {
+                if (up) {
+                    return (float) (Math.pow(t, 2 * k));
+                } else {
+                    return (float) (1 - Math.pow(1 - t, 2 * k));
+                }
+            }
+
+            return t;
+
+        }
+    }
+
+    private void setRS(int r) {
+        if (r > end * 1000) {
+            r = end * 1000;
+        }
         rotationSpeed = r;
         invalidateState();
     }
@@ -252,7 +328,7 @@ public class Tachometer extends View {
     }
 
     private void drawArrow(Canvas canvas) {
-        float angle = (startAngle + rotationSpeed * availableAngle / (end * 1000) );
+        float angle = (startAngle + rotationSpeed * availableAngle / (end * 1000));
         PointF a = calculateCirclePoint(angle, contentWidth / 2f - offsetFrame - smallTickSize);
         PointF b = calculateCirclePoint(angle + 2, contentWidth / 2f - offsetFrame - mediumTickSize);
         PointF e = calculateCirclePoint(angle - 2, contentWidth / 2f - offsetFrame - mediumTickSize);
@@ -289,17 +365,9 @@ public class Tachometer extends View {
     }
 
     private void invalidateState() {
-        //mTextPaint.setTextSize(mExampleDimension);
-//        mTextPaint.setColor(mExampleColor);
-        //mTextWidth = mTextPaint.measureText(mExampleString);
-//        mTextPaint.setTextSize(getResources().getDimensionPixelSize(R.dimen.font_size));
-
-
-        //Paint.FontMetrics fontMetrics = mTextPaint.getFontMetrics();
-        //mTextHeight = fontMetrics.bottom;
 
         invalidate();
-        requestLayout();
+//        requestLayout();
     }
 
 
@@ -322,6 +390,8 @@ public class Tachometer extends View {
         centerX = paddingLeft + contentWidth / 2;
         centerY = paddingTop + contentHeight / 2;
         piece = contentWidth / 5;
+
+        invalidateState();
     }
 
     @Override
@@ -341,27 +411,6 @@ public class Tachometer extends View {
         }
         super.onRestoreInstanceState(state);
     }
-
-
-    /**
-     * Gets the example color attribute value.
-     *
-     * @return The example color attribute value.
-     */
-//    public int getExampleColor() {
-//        return mExampleColor;
-//    }
-
-    /**
-     * Sets the view's example color attribute value. In the example view, this color
-     * is the font color.
-     *
-     * @param exampleColor The example color attribute value to use.
-     */
-//    public void setExampleColor(int exampleColor) {
-//        mExampleColor = exampleColor;
-//        invalidateState();
-//    }
 
 
 }

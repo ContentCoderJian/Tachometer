@@ -48,51 +48,77 @@ public class TachometerService extends Service {
             try {
                 turnOnTheEngine();
                 while(running) {
-                    push();
-                    release();
-                    push();
-                    release();
-                    release();
-                    push();
-                    push();
 
+                    sendValue(3000);
+                    delay();
+                    sendValue(1000);
+                    delay();
+
+                    sendValue(5000);
+                    delay();
+                    sendValue(900);
+                    delay();
+
+                    sendValue(7000);
+                    delay();
+                    sendValue(800);
+                    delay();
+                    sendValue(1100);
+                    delay();
+                    sendValue(1000);
+                    delay(2);
+
+                    push(2);
+                    release(2);
+                    push(3);
+                    release(2);
+                    push(4);
+                    delay(2);
                     leave();
-                    delay();
-                    delay();
+
                 }
+                leave();
 
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
 
-        private float calculateMomentum() {
+        private float calculateMomentum(int N, int i, boolean up) {
+            float k = 1.5f;
+//            return (float) (Math.pow(i / 4f, 2 * k));
+            if (up) {
+                return (float) (500 + 800 * Math.exp( 1f * i / N ));
+            } else {
+                return (float) (700 + 700 * Math.exp( 1f * i / N ));
+            }
 
-            return (float) (1 + 2 * Math.exp(- rps / 1000));
+//            return 1;
         }
 
-        private void push() throws InterruptedException {
+        private void push(int N) throws InterruptedException {
             Log.d("Service", "push");
-            for (int i = 0; i < 4 && running; ++i) {
-                rps += 500 * calculateMomentum();
+
+            for (int i = 0; i < N && running; ++i) {
+                rps += calculateMomentum(N, i, true);
                 sendValue(rps);
                 delay();
             }
         }
 
-        private void release() throws InterruptedException {
+        private void release(int N) throws InterruptedException {
             Log.d("Service", "release");
-            for (int i = 0; i < 3 && running; ++i) {
-                rps -= 500 * calculateMomentum();
+            for (int i = 0; i < N && running; ++i) {
+                rps -= calculateMomentum(N, i, false);
                 sendValue(rps);
                 delay();
             }
         }
-
+//
         private void leave() throws InterruptedException {
             Log.d("Service", "leave");
             while (rps > 1000 && running) {
-                rps -= 600 * calculateMomentum();
+                rps -= calculateMomentum(4, 2, false);
                 sendValue(rps);
                 delay();
             }
@@ -104,13 +130,13 @@ public class TachometerService extends Service {
         }
 
         private void turnOnTheEngine() throws InterruptedException {
-            delay(500);
+            delay();
             sendValue(1200);
-            delay(500);
+            delay();
             sendValue(800);
-            delay(500);
+            delay();
             sendValue(1000);
-            delay(1000);
+            delay();
             rps = 1000;
         }
 
@@ -121,8 +147,10 @@ public class TachometerService extends Service {
             sendBroadcast(intent);
         }
 
-        private void delay(int time) throws InterruptedException {
-            Thread.sleep(time);
+        private void delay(int num) throws InterruptedException {
+            for (int i = 0; i < num; ++i) {
+                delay();
+            }
         }
 
         private void delay() throws InterruptedException {
