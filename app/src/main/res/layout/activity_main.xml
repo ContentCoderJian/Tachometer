@@ -8,7 +8,7 @@
     tools:context="com.owl.tachometer.MainActivity">
 
 
-    <com.owl.tachometer.Tachometer
+    <com.owl.tachometer.Views.Tachometer
         android:id="@+id/tachometer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

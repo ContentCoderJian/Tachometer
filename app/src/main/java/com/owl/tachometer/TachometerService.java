@@ -3,7 +3,6 @@ package com.owl.tachometer;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import android.util.Log;
 
 public class TachometerService extends Service {
     final static String TACHOMETER_TICK_ACTION = "com.owl.tachometer.TACHOMETER_TICK_ACTION";
@@ -11,9 +10,9 @@ public class TachometerService extends Service {
 
     private MyThread thread;
     private boolean running;
+    final int duration = 500;
 
     public TachometerService() {
-
     }
 
     @Override
@@ -33,102 +32,115 @@ public class TachometerService extends Service {
     }
 
     @Override
-    public void onDestroy()
-    {
+    public void onDestroy() {
         running = false;
         super.onDestroy();
     }
 
-    public class MyThread extends Thread{
+    public class MyThread extends Thread {
 
-        private int rps = 0;
+        private int rpm = 0;
 
         @Override
         public void run() {
             try {
                 turnOnTheEngine();
-                while(running) {
-
-                    sendValue(3000);
-                    delay();
-                    sendValue(1000);
-                    delay();
-
-                    sendValue(5000);
-                    delay();
-                    sendValue(900);
+                while (running) {
+                    // emulate wrooom wrooooom wroooooom!
+                    produceSequence(3000, 1000);
+                    produceSequence(5000, 900);
+                    produceSequence(7000, 800, 1100, 1000);
                     delay();
 
-                    sendValue(7000);
-                    delay();
-                    sendValue(800);
-                    delay();
-                    sendValue(1100);
-                    delay();
-                    sendValue(1000);
-                    delay(2);
-
-                    push(2);
-                    release(2);
-                    push(3);
-                    release(2);
-                    push(4);
-                    delay(2);
+                    // emulate gear shift
+                    push(2); release(2);
+                    push(3); release(2);
+                    push(4); delay(2);
                     leave();
-
                 }
                 leave();
 
-            } catch(Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        private float calculateMomentum(int N, int i, boolean up) {
-            float k = 1.5f;
-//            return (float) (Math.pow(i / 4f, 2 * k));
-            if (up) {
-                return (float) (500 + 800 * Math.exp( 1f * i / N ));
-            } else {
-                return (float) (700 + 700 * Math.exp( 1f * i / N ));
+        /**
+         * produce sequence of rpms measured by every duration interval
+         * @param rpms
+         * @throws InterruptedException
+         */
+        private void produceSequence(int... rpms) throws InterruptedException {
+            for (int value : rpms) {
+                sendValue(value);
+                delay();
             }
-
-//            return 1;
         }
 
+        /**
+         * @param N number of ticks (by duration) to increase rpm
+         * @throws InterruptedException
+         */
         private void push(int N) throws InterruptedException {
-            Log.d("Service", "push");
-
             for (int i = 0; i < N && running; ++i) {
-                rps += calculateMomentum(N, i, true);
-                sendValue(rps);
+                rpm += calculateMomentum(N, i, true);
+                sendValue(rpm);
                 delay();
             }
         }
 
+        /**
+         * @param N number of ticks (by duration) to decrease rpm
+         * @throws InterruptedException
+         */
         private void release(int N) throws InterruptedException {
-            Log.d("Service", "release");
             for (int i = 0; i < N && running; ++i) {
-                rps -= calculateMomentum(N, i, false);
-                sendValue(rps);
+                rpm -= calculateMomentum(N, i, false);
+                sendValue(rpm);
                 delay();
             }
         }
-//
+
+        /**
+         * release accelerator while rpm not become 1000
+         *
+         * @throws InterruptedException
+         */
         private void leave() throws InterruptedException {
-            Log.d("Service", "leave");
-            while (rps > 1000 && running) {
-                rps -= calculateMomentum(4, 2, false);
-                sendValue(rps);
+            while (rpm > 1000 && running) {
+                rpm -= calculateMomentum(4, 2, false);
+                sendValue(rpm);
                 delay();
             }
-            rps = 1100;
-            sendValue(rps);
+            rpm = 1100;
+            sendValue(rpm);
             delay();
             sendValue(1000);
             delay();
         }
 
+        /**
+         * some exponential accelerate interpolator. for push(N)
+         *
+         * @param N  number of ticks in interval
+         * @param i  current tick
+         * @param up up or down
+         * @return generated rpm step based on direction and interval progress
+         */
+        private float calculateMomentum(int N, int i, boolean up) {
+            float k = 1.5f;
+            if (up) {
+                return (float) (500 + 800 * Math.exp(1f * i / N));
+            } else {
+                return (float) (700 + 700 * Math.exp(1f * i / N));
+            }
+        }
+
+        /**
+         * startup the engine. after that - rpm set on 1000
+         *
+         * @throws InterruptedException
+         */
         private void turnOnTheEngine() throws InterruptedException {
             delay();
             sendValue(1200);
@@ -137,7 +149,7 @@ public class TachometerService extends Service {
             delay();
             sendValue(1000);
             delay();
-            rps = 1000;
+            rpm = 1000;
         }
 
         private void sendValue(int value) {
@@ -154,7 +166,7 @@ public class TachometerService extends Service {
         }
 
         private void delay() throws InterruptedException {
-            Thread.sleep(500);
+            Thread.sleep(duration);
         }
 
     }

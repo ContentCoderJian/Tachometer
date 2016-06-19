@@ -1,12 +1,6 @@
-package com.owl.tachometer;
+package com.owl.tachometer.Views;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.animation.TimeInterpolator;
-import android.animation.TypeEvaluator;
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -21,22 +15,20 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.Interpolator;
 
-import java.util.ArrayList;
+import com.owl.tachometer.R;
 
 
 /**
- * TODO: document your custom view class.
+ * Custom Tachometer view class
  */
 public class Tachometer extends View {
 
     final static String TACHOMETER_VIEW_STATE = "com.owl.tachometer.TACHOMETER_VIEW_STATE";
     final static String TACHOMETER_VIEW_ROTATION = "com.owl.tachometer.TACHOMETER_VIEW_ROTATION";
 
+    // ARGS FROM XML LAYOUT
     private int start = 0;
     private int end = 8;
     private int redZone = 7;
@@ -46,8 +38,8 @@ public class Tachometer extends View {
     private int arrowColor = Color.RED;
     private int divisionColor = Color.WHITE;
     private float availableAngle = 270f;
-    float startAngle;
 
+    // SET OF PAINTS
     private TextPaint numPaint; // paint for digit letters
     private TextPaint rpmPaint; // paint for rpm text
     private Paint bigDivisionPaint;
@@ -58,6 +50,7 @@ public class Tachometer extends View {
     private Paint backgroundPaint;
     private Paint round1, round2, round3; // paints for frame
 
+    // ARGS FROM RESOURCES
     private String rpmText;
     private int frameWidth;
     private int offsetFrame; // offset from frame to ticks
@@ -65,9 +58,7 @@ public class Tachometer extends View {
     private int smallTickSize, mediumTickSize, bigTickSize;
     private int divisionWidth;
 
-    Rect r = new Rect(); // template rect (outside function to reduce allocations per draw)
-
-    // config after onMeasure
+    // CONFIG AFTER onMeasure
     private int currentSize;
     private int centerX, centerY;
     private int contentWidth, contentHeight;
@@ -75,6 +66,19 @@ public class Tachometer extends View {
     private int piece; // 1/5 from content size
 
     private int rotationSpeed = 0;
+
+    float startAngle = 45f;
+    final int duration = 500;
+    float bigStep;
+    float smallStep;
+    float redAngle;
+    Rect r = new Rect(); // template rect
+    PointF a = new PointF(), a1 = new PointF(),
+            b = new PointF(), b1 = new PointF(),
+            c = new PointF(), c1 = new PointF(); // template points
+    private ObjectAnimator animator;
+    private CompositeInterpolator interpol;
+
 
     public Tachometer(Context context) {
         super(context);
@@ -104,6 +108,9 @@ public class Tachometer extends View {
         divisionColor = a.getColor(R.styleable.Tachometer_divisionColor, divisionColor);
         availableAngle = (float) (a.getInteger(R.styleable.Tachometer_availableAngle, (int) availableAngle));
         startAngle = (360 - availableAngle) / 2;
+        bigStep = availableAngle / end;
+        smallStep = bigStep / 10f;
+        redAngle = redZone * bigStep + startAngle;
 
         if (a.hasValue(R.styleable.Tachometer_sticker)) {
             sticker = a.getDrawable(
@@ -124,73 +131,31 @@ public class Tachometer extends View {
 
         initPaints();
 
+        animator = ObjectAnimator.ofInt(this, "RotationSpeedInternal", 0, 1);
+        animator.setDuration(duration);
+
+        interpol = new CompositeInterpolator();
 
         invalidateState();
     }
 
-    public void setRotationSpeed(final int r) {
-
-
-        ObjectAnimator anim = ObjectAnimator.ofInt(this, "RS", rotationSpeed, r);
-        anim.setDuration(500);
-        final MyInterpolator interpol = new MyInterpolator();
-        interpol.A = rotationSpeed;
-        interpol.B = r;
-        anim.setInterpolator(interpol);
-
-        anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                int animProgress = (Integer) animation.getAnimatedValue();
-                //seekBar.setProgress(animProgress);
-            }
-        });
-        anim.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                // done. setup residual animation
-                int sign = (r > rotationSpeed) ? 1 : -1;
-                int length = Math.abs(r - rotationSpeed);
-                ObjectAnimator animR = ObjectAnimator.ofInt(this, "RS", r, r + sign * length / 5);
-                animR.setDuration(500);
-                animR.setInterpolator(interpol);
-//                animR.start();
-            }
-        });
-
-
-//        anim.setInterpolator(new AccelerateInterpolator(1.8f - half / 8000f));
-
-        anim.start();
-
+    public void setRotationSpeed(int r) {
+        interpol.setRange(rotationSpeed, r);
+        animator.setIntValues(rotationSpeed, r);
+        animator.setInterpolator(interpol);
+        animator.start();
     }
 
-    private class MyInterpolator implements Interpolator {
-
-        public int A, B;
-
-        @Override
-        public float getInterpolation(float t) {
-            boolean up = (B > A) ? true : false;
-            float half = Math.abs(A - B) / 2f;
-//            float k = 0.8f + Math.abs(A - B) / 4000f;
-            float k = 0.8f;
-            if (Math.abs(A - B) > 4000) {
-                if (up) {
-                    return (float) (Math.pow(t, 2 * k));
-                } else {
-                    return (float) (1 - Math.pow(1 - t, 2 * k));
-                }
-            }
-
-            return t;
-
-        }
+    public int getRotationSpeed() {
+        return rotationSpeed;
     }
 
-    private void setRS(int r) {
+    private void setRotationSpeedInternal(int r) {
         if (r > end * 1000) {
             r = end * 1000;
+        }
+        if (r < 0) {
+            r = 0;
         }
         rotationSpeed = r;
         invalidateState();
@@ -203,7 +168,6 @@ public class Tachometer extends View {
         drawFrame(canvas);
         drawClock(canvas);
         drawArrow(canvas);
-
     }
 
 
@@ -282,79 +246,71 @@ public class Tachometer extends View {
     }
 
     private void drawClock(Canvas canvas) {
-        float bigStep = availableAngle / end;
-        float smallStep = bigStep / 10f;
-
         float radius = contentWidth / 2f - offsetFrame;
-
         float currentAngle = startAngle;
-        float redAngle = redZone * bigStep + startAngle;
 
         int counter = start;
-        PointF a, a2, b, b2;
-
         while (currentAngle < startAngle + availableAngle) {
-
-            a = calculateCirclePoint(currentAngle, radius);
-            b = calculateCirclePoint(currentAngle, radius - bigTickSize);
+            // draw big tick
+            calculateCirclePoint(currentAngle, radius, a);
+            calculateCirclePoint(currentAngle, radius - bigTickSize, b);
             canvas.drawLine(a.x, a.y, b.x, b.y, bigDivisionPaint);
-
-            a = calculateCirclePoint(currentAngle, radius - bigTickSize - offsetDigit);
+            // draw num text
+            calculateCirclePoint(currentAngle, radius - bigTickSize - offsetDigit, a);
             drawText(canvas, numPaint, String.valueOf(counter++), a.x, a.y);
 
             for (int j = 0; j < 10; ++j) {
                 currentAngle += smallStep;
-
-                a2 = calculateCirclePoint(currentAngle, radius);
-                b2 = calculateCirclePoint(currentAngle, radius - smallTickSize);
+                // draw small or medium tick
+                calculateCirclePoint(currentAngle, radius, a1);
+                calculateCirclePoint(currentAngle, radius - smallTickSize, b1);
                 if (j == 4) {
-                    b2 = calculateCirclePoint(currentAngle, radius - mediumTickSize);
-                    canvas.drawLine(a2.x, a2.y, b2.x, b2.y, mediumDivisionPaint);
+                    calculateCirclePoint(currentAngle, radius - mediumTickSize, b1);
+                    canvas.drawLine(a1.x, a1.y, b1.x, b1.y, mediumDivisionPaint);
                 } else if (currentAngle < redAngle) {
-                    canvas.drawLine(a2.x, a2.y, b2.x, b2.y, smallDivisionPaint);
+                    canvas.drawLine(a1.x, a1.y, b1.x, b1.y, smallDivisionPaint);
                 } else {
-                    canvas.drawLine(a2.x, a2.y, b2.x, b2.y, smallDivisionRedPaint);
+                    // in red zone - small ticks are red
+                    canvas.drawLine(a1.x, a1.y, b1.x, b1.y, smallDivisionRedPaint);
                 }
             }
         }
-
-        a = calculateCirclePoint(currentAngle, radius);
-        b = calculateCirclePoint(currentAngle, radius - bigTickSize);
+        // draw last big tick
+        calculateCirclePoint(currentAngle, radius, a);
+        calculateCirclePoint(currentAngle, radius - bigTickSize, b);
         canvas.drawLine(a.x, a.y, b.x, b.y, bigDivisionPaint);
-
-        a = calculateCirclePoint(currentAngle, radius - bigTickSize - offsetDigit);
+        // draw last num text
+        calculateCirclePoint(currentAngle, radius - bigTickSize - offsetDigit, a);
         drawText(canvas, numPaint, String.valueOf(counter++), a.x, a.y);
 
     }
 
     private void drawArrow(Canvas canvas) {
         float angle = (startAngle + rotationSpeed * availableAngle / (end * 1000));
-        PointF a = calculateCirclePoint(angle, contentWidth / 2f - offsetFrame - smallTickSize);
-        PointF b = calculateCirclePoint(angle + 2, contentWidth / 2f - offsetFrame - mediumTickSize);
-        PointF e = calculateCirclePoint(angle - 2, contentWidth / 2f - offsetFrame - mediumTickSize);
-        PointF c = calculateCirclePoint(angle + 90, 12);
-        PointF d = calculateCirclePoint(angle - 90, 12);
+        calculateCirclePoint(angle, contentWidth / 2f - offsetFrame - smallTickSize, a);
+        calculateCirclePoint(angle + 2, contentWidth / 2f - offsetFrame - mediumTickSize, a1);
+        calculateCirclePoint(angle + 90, 12, b);
+        calculateCirclePoint(angle - 90, 12, b1);
+        calculateCirclePoint(angle - 2, contentWidth / 2f - offsetFrame - mediumTickSize, c);
 
         Path p = new Path();
         p.reset();
         p.moveTo(a.x, a.y);
+        p.lineTo(a1.x, a1.y);
         p.lineTo(b.x, b.y);
+        p.lineTo(b1.x, b1.y);
         p.lineTo(c.x, c.y);
-        p.lineTo(d.x, d.y);
-        p.lineTo(e.x, e.y);
         p.lineTo(a.x, a.y);
 
         canvas.drawPath(p, arrowPaint);
 
-        PointF g = calculateCirclePoint(angle + 180, (contentWidth / 2f - offsetFrame) * 0.2f);
-        canvas.drawLine(g.x, g.y, centerX, centerY, arrowPaint);
-
+        calculateCirclePoint(angle + 180, (contentWidth / 2f - offsetFrame) * 0.2f, c1);
+        canvas.drawLine(c1.x, c1.y, centerX, centerY, arrowPaint);
         canvas.drawCircle(centerX, centerY, piece / 10, arrowPaint);
     }
 
-    private PointF calculateCirclePoint(float angle, float R) {
-        return new PointF(
-                (float) (centerX - R * Math.sin(angle / 180 * Math.PI)),
+    private void calculateCirclePoint(float angle, float R, PointF res) {
+        res.set((float) (centerX - R * Math.sin(angle / 180 * Math.PI)),
                 (float) (centerY + R * Math.cos(angle / 180 * Math.PI)));
     }
 
@@ -365,7 +321,6 @@ public class Tachometer extends View {
     }
 
     private void invalidateState() {
-
         invalidate();
 //        requestLayout();
     }
