@@ -53,9 +53,12 @@ public class TachometerService extends Service {
                     delay();
 
                     // emulate gear shift
-                    push(2); release(2);
-                    push(3); release(2);
-                    push(4); delay(2);
+                    push(2);
+                    release(2);
+                    push(3);
+                    release(2);
+                    push(4);
+                    delay(2);
                     leave();
                 }
                 leave();
@@ -67,6 +70,7 @@ public class TachometerService extends Service {
 
         /**
          * produce sequence of rpms measured by every duration interval
+         *
          * @param rpms
          * @throws InterruptedException
          */
